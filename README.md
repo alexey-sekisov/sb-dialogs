@@ -1,5 +1,8 @@
 # Sb Air UI
 
+[![CI/CD](https://github.com/alexey-sekisov/sb-dialogs/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/alexey-sekisov/sb-dialogs/actions/workflows/ci-cd.yml)
+[Demo](https://alexey-sekisov.github.io/sb-dialogs/) · [Скачать актуальный UMD](https://alexey-sekisov.github.io/sb-dialogs/dist/sb.umd.js)
+
 Самодостаточная браузерная библиотека диалогов, HTTP-запросов, loader-состояний и утилит в стиле Bitrix24 Air. Production-поставка состоит из одного файла `dist/sb.umd.js`: Vue, B24UI и scoped-стили уже находятся внутри.
 
 Библиотека не использует глобальный `BX` и не содержит адаптеров `BX.rest`, `BX.ajax` или `BX.SidePanel`.
@@ -228,7 +231,20 @@ bun run typecheck
 bun run test
 bun run build            # dist/sb.umd.js + raw/gzip size
 bun run build:playground
+bun run build:pages      # UMD + готовый каталог playground-dist для Pages
 bun run check
 ```
 
 Стили B24UI/Tailwind на этапе сборки префиксуются `#sb-ui-root`, reset не выходит за пределы контейнера. UI-root и Vue-приложение монтируются лениво при первом вызове UI.
+
+## CI/CD и GitHub Pages
+
+Workflow `.github/workflows/ci-cd.yml` запускается для pull request и каждого push в `main`. Он устанавливает зависимости строго по `bun.lock`, выполняет typecheck и тесты, собирает UMD и сохраняет `sb.umd.js` как GitHub Actions artifact на 14 дней.
+
+После успешной проверки ветки `main` тот же workflow публикует playground в GitHub Pages. В Pages-артефакт также копируется собранный UMD, поэтому demo и ссылка скачивания всегда относятся к одному commit. Каталоги `dist/` и `playground-dist/` в Git не добавляются — production-файлы выпускает только CI/CD.
+
+Workflow автоматически пытается включить GitHub Pages и выбрать публикацию через Actions. Если это запрещено настройками организации или репозитория, нужно один раз выбрать **Settings → Pages → Build and deployment → Source → GitHub Actions**. После успешного push в `main` будут доступны:
+
+- demo: `https://alexey-sekisov.github.io/sb-dialogs/`;
+- UMD: `https://alexey-sekisov.github.io/sb-dialogs/dist/sb.umd.js`;
+- временный UMD-артефакт конкретного commit — на странице соответствующего Actions run.

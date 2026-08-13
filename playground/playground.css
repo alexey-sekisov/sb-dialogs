@@ -5,6 +5,8 @@ header { margin-bottom: 36px; }
 .eyebrow { color: #159dcc; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
 h1 { margin: 8px 0; font-size: clamp(36px, 8vw, 64px); letter-spacing: -.04em; }
 header p { max-width: 640px; color: #63707c; font-size: 18px; }
+.download { display: inline-flex; min-height: 40px; align-items: center; margin-top: 8px; padding: 0 18px; border-radius: 10px; background: #2fc6f6; color: #fff; font-size: 14px; font-weight: 700; text-decoration: none; }
+.download:hover { background: #20b9ea; }
 section { margin: 18px 0; padding: 24px; border: 1px solid #dce3e7; border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgb(30 50 70 / 6%); }
 h2 { margin: 0 0 18px; font-size: 18px; }
 .grid { display: flex; flex-wrap: wrap; gap: 10px; }

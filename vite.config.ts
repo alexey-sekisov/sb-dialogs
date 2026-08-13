@@ -42,7 +42,13 @@ function injectCssIntoUmd(): Plugin {
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [vue(), bitrix24UI(), tailwindcss(), injectCssIntoUmd()],
+  base: mode === 'playground' ? './' : undefined,
+  plugins: [
+    vue(),
+    bitrix24UI(),
+    tailwindcss(),
+    ...(mode === 'playground' ? [] : [injectCssIntoUmd()]),
+  ],
   build: mode === 'playground'
     ? { outDir: 'playground-dist' }
     : {
