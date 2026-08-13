@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ru">
+  <head><meta charset="UTF-8"><title>Sb UMD smoke</title></head>
+  <body>
+    <button id="open">Открыть UMD alert</button>
+    <output id="status"></output>
+    <script src="/dist/sb.umd.js"></script>
+    <script src="/dist/sb.umd.js"></script>
+    <script>
+      document.getElementById('status').textContent = window.Sb
+        ? `Sb ${window.Sb.version} загружен`
+        : 'Sb не загружен'
+      document.getElementById('open').addEventListener('click', () => {
+        window.Sb.dialogs().alert({ title: 'UMD работает', message: 'Внешних runtime-зависимостей нет.' })
+      })
+    </script>
+  </body>
+</html>

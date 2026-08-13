@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sb Air UI — Playground</title>
+  </head>
+  <body>
+    <main class="playground">
+      <header>
+        <span class="eyebrow">FIRST BIT · AIR UI</span>
+        <h1>Sb Playground</h1>
+        <p>Диалоги, транспорт и утилиты из одного самодостаточного UMD-файла.</p>
+      </header>
+
+      <section>
+        <h2>Диалоги</h2>
+        <div class="grid">
+          <button data-action="alert">Alert</button>
+          <button data-action="confirm">Confirm</button>
+          <button data-action="prompt">Prompt</button>
+          <button data-action="error">Error + details</button>
+          <button data-action="custom">Custom DOM</button>
+          <button data-action="stack">Стек окон</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Toast</h2>
+        <div class="grid">
+          <button data-toast="info">Info</button>
+          <button data-toast="success">Success</button>
+          <button data-toast="warning">Warning</button>
+          <button data-toast="error">Error</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Форма по схеме</h2>
+        <button data-action="form">Открыть форму</button>
+      </section>
+
+      <section>
+        <h2>HTTP и loader</h2>
+        <div class="grid">
+          <button data-action="http-success">Успешный JSON</button>
+          <button data-action="http-error">HTTP 422</button>
+          <button data-action="http-cancel">Отмена группы</button>
+          <button data-action="loader">Два loader</button>
+          <button data-action="download">Скачать demo.txt</button>
+          <button data-action="copy">Копировать текст</button>
+        </div>
+      </section>
+
+      <output id="result">Готово.</output>
+    </main>
+    <script type="module" src="/playground/main.ts"></script>
+  </body>
+</html>
