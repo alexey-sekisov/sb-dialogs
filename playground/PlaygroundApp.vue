@@ -136,6 +136,8 @@ const actions: Record<string, () => void | Promise<void>> = {
           type: 'text',
           label: 'Название',
           hint: 'Короткое и понятное название задачи',
+          description: 'Enter сохранит форму после успешной проверки.',
+          autofocus: true,
           required: true,
           min: 3,
           placeholder: 'Что нужно сделать?',
@@ -153,6 +155,20 @@ const actions: Record<string, () => void | Promise<void>> = {
           ],
         },
         { name: 'tags', type: 'multiselect', label: 'Метки', options: [1, 2, 3] },
+        {
+          name: 'template',
+          type: 'select',
+          label: 'Шаблон',
+          description: 'Варианты загружаются заново при смене приоритета.',
+          optionsDeps: ['priority'],
+          options: async (values) => {
+            await new Promise((resolve) => setTimeout(resolve, 450))
+            return [
+              { value: `${values.priority}-default`, label: `Шаблон: ${values.priority}` },
+              { value: 'empty', label: 'Без шаблона' },
+            ]
+          },
+        },
         { name: 'estimate', type: 'number', label: 'Оценка, часы', min: 1, max: 100 },
         { name: 'description', type: 'textarea', label: 'Описание', placeholder: 'Дополнительная информация' },
         { type: 'divider' },
@@ -169,6 +185,7 @@ const actions: Record<string, () => void | Promise<void>> = {
           id: 'save',
           label: 'Сохранить',
           variant: 'air-primary',
+          submit: true,
           handler: async ({ values }) => {
             await new Promise((resolve) => setTimeout(resolve, 800))
             return values
@@ -176,6 +193,10 @@ const actions: Record<string, () => void | Promise<void>> = {
         },
         { id: 'cancel', label: 'Отмена', cancel: true },
       ],
+      beforeClose: async ({ dirty }) => !dirty || Sb.dialogs().confirm({
+        title: 'Несохранённые изменения',
+        message: 'Закрыть форму без сохранения?',
+      }),
     }))
   },
   async 'http-success'() {
@@ -228,11 +249,17 @@ async function runAction(action: DemoAction): Promise<void> {
 }
 
 function showToast(action: DemoAction & { type: ToastType }): void {
-  Sb.dialogs().toast({
+  const toast = Sb.dialogs().toast({
     type: action.type,
     title: action.label,
     message: 'Таймер приостанавливается при наведении.',
+    dedupe: `playground-${action.type}`,
+    action: {
+      label: 'Показать результат',
+      handler: () => print('Toast action', { type: action.type }),
+    },
   })
+  setTimeout(() => toast.update({ message: 'Toast обновлён через handle.update().' }), 900)
   print('Toast', { type: action.type, title: action.label })
 }
 </script>

@@ -65,6 +65,7 @@
     padding: 16px 24px 20px;
     border-top: 1px solid var(--ui-color-divider-default, #dfe0e3);
     background: var(--ui-color-bg-content-primary, #fff);
+    box-shadow: 0 -10px 18px -20px rgb(0 0 0 / 45%);
   }
   #sb-ui-root .sb-form__error {
     margin-top: 14px;
@@ -81,6 +82,11 @@
   #sb-ui-root .sb-form__error { color: var(--ui-color-palette-red-60, #ff5752); }
   #sb-ui-root .sb-field__error,
   #sb-ui-root .sb-form__error { font-size: 12px; }
+  #sb-ui-root .sb-field__description {
+    color: var(--ui-color-base-3, #828b95);
+    font-size: 12px;
+    line-height: 16px;
+  }
 
   #sb-ui-root .sb-native-select {
     width: 100%;
@@ -243,6 +249,7 @@
   #sb-ui-root .sb-toast__content { min-width: 0; padding-top: 1px; }
   #sb-ui-root .sb-toast__title { margin-bottom: 2px; font-size: 14px; font-weight: 600; }
   #sb-ui-root .sb-toast__message { color: var(--ui-color-base-3, #828b95); font-size: 13px; }
+  #sb-ui-root .sb-toast__action { margin: 6px 0 -4px -8px; }
   #sb-ui-root .sb-toast__close { align-self: start; margin-top: -4px; }
   #sb-ui-root .sb-toast__progress {
     position: absolute;
@@ -318,3 +325,11 @@
 }
 
 @keyframes sb-toast-progress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  #sb-ui-root .sb-toast,
+  #sb-ui-root .sb-toast__progress,
+  #sb-ui-root .sb-loader-overlay,
+  #sb-ui-root .sb-loader-panel,
+  #sb-ui-root .sb-error-details-wrap { animation: none !important; transition: none !important; }
+}

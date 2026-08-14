@@ -40,6 +40,7 @@ const toastIcons = {
         :key="toast.id"
         class="sb-toast"
         :class="`sb-toast--${toast.type}`"
+        :role="toast.type === 'error' ? 'alert' : 'status'"
         @mouseenter="toast.pause"
         @mouseleave="toast.resume"
       >
@@ -47,6 +48,15 @@ const toastIcons = {
         <div class="sb-toast__content">
           <div v-if="toast.title" class="sb-toast__title">{{ toast.title }}</div>
           <div class="sb-toast__message">{{ toast.message }}</div>
+          <B24Button
+            v-if="toast.action"
+            class="sb-toast__action"
+            :label="toast.action.label"
+            color="air-tertiary-no-accent"
+            size="sm"
+            :loading="toast.actionLoading"
+            @click="toast.runAction($event)"
+          />
         </div>
         <B24Button
           v-if="toast.closable"
@@ -59,6 +69,7 @@ const toastIcons = {
         />
         <div
           v-if="toast.timeout > 0"
+          :key="toast.progressKey"
           class="sb-toast__progress"
           :style="{ animationDuration: `${toast.timeout}ms` }"
         />

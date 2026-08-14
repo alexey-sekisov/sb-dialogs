@@ -110,13 +110,19 @@ const toast = Sb.dialogs().toast({
   message: 'Сделка сохранена',
   timeout: 5000,  // 0 отключает автозакрытие
   closable: true,
+  dedupe: 'deal-save',
+  action: {
+    label: 'Отменить',
+    handler: async () => undoSave(),
+  },
 })
 
+toast.update({ message: 'Данные обновлены' })
 toast.close()
 await toast.closed
 ```
 
-Toast располагаются стеком справа сверху. При наведении отсчёт timeout приостанавливается.
+Toast располагаются стеком справа сверху. При наведении отсчёт timeout приостанавливается. Одинаковые активные уведомления по умолчанию объединяются, а `dedupe` со строкой задаёт явный ключ. Одновременно показывается не более пяти toast; лимит можно изменить через `maxVisible`.
 
 ### Error
 
@@ -152,6 +158,8 @@ const result = await Sb.dialogs().form({
       type: 'text',
       label: 'Название',
       hint: 'Короткое и понятное название задачи',
+      description: 'Введите название длиной не менее трёх символов',
+      autofocus: true,
       required: true,
       min: 3,
     },
@@ -159,11 +167,8 @@ const result = await Sb.dialogs().form({
       name: 'priority',
       type: 'select',
       label: 'Приоритет',
-      options: [
-        { value: 'low', label: 'Низкий' },
-        { value: 'normal', label: 'Обычный' },
-        { value: 'high', label: 'Высокий', disabled: true },
-      ],
+      optionsDeps: ['title'],
+      options: async (values) => loadPriorities(values.title),
     },
     { name: 'tags', type: 'multiselect', label: 'Метки', options: [1, 2, 3] },
     { name: 'estimate', type: 'number', label: 'Оценка', min: 1, max: 100 },
@@ -178,6 +183,7 @@ const result = await Sb.dialogs().form({
       id: 'save',
       label: 'Сохранить',
       variant: 'air-primary',
+      submit: true,
       handler: async ({ values, dialog, event }) => {
         await save(values)
         return values
@@ -185,6 +191,10 @@ const result = await Sb.dialogs().form({
     },
     { id: 'cancel', label: 'Отмена', cancel: true },
   ],
+  beforeClose: async ({ dirty }) => !dirty || Sb.dialogs().confirm({
+    title: 'Несохранённые изменения',
+    message: 'Закрыть форму без сохранения?',
+  }),
 })
 ```
 
@@ -205,11 +215,17 @@ const result = await Sb.dialogs().form({
 Правила формы:
 
 - `hint` выводится официальным B24UI Tooltip при наведении или фокусе с клавиатуры.
+- `description` постоянно отображается под полем; `autofocus` переводит в него фокус после открытия.
+- `visibleWhen` и `disabledWhen` динамически управляют полем на основе текущих values; также доступен `readonly`.
+- `options` у select, multiselect и radio может быть sync/async-функцией; `optionsDeps` ограничивает список значений, запускающих повторную загрузку.
 - `columns: 2` включает desktop-сетку; `columnSpan: 2` растягивает конкретное поле на всю ширину.
 - `textarea`, `radio`, `checkbox`, `content`, `divider` и `section` в двухколоночной форме по умолчанию занимают всю ширину.
 - Доступны `required`, `min`, `max`, `pattern` и sync/async `validate`.
 - Action запускает валидацию, если не передано `validate: false`.
 - Во время async handler активная кнопка показывает loader, остальные блокируются.
+- Enter запускает action с `submit: true` или первый action без `cancel`; для textarea используется Ctrl/Cmd+Enter. Это можно отключить через `submitOnEnter: false`.
+- При ошибке валидации форма прокручивается к первому проблемному полю и переводит в него фокус.
+- `beforeClose` может остановить закрытие крестиком, overlay, Escape или cancel-action, например при несохранённых изменениях.
 - Возврат `false` оставляет форму открытой.
 - Любой другой успешный результат закрывает форму и становится результатом Promise.
 - Ошибка handler открывает error-окно, а форма остаётся в стеке.

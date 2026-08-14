@@ -49,7 +49,7 @@ onMounted(() => {
 })
 
 function updateOpen(open: boolean): void {
-  if (!open && props.active && props.record.options.closable !== false) props.record.cancel()
+  if (!open && props.active && props.record.options.closable !== false) props.record.cancel('dismiss')
 }
 
 async function submitPrompt(): Promise<void> {
@@ -188,11 +188,11 @@ async function runCustomAction(action: any, event: MouseEvent): Promise<void> {
             :color="record.options.danger ? 'air-primary-alert' : 'air-primary'"
             @click="record.finish(true)"
           />
-          <B24Button :label="record.options.cancelLabel" color="air-tertiary" @click="record.cancel()" />
+          <B24Button :label="record.options.cancelLabel" color="air-tertiary" @click="record.cancel('cancel')" />
         </template>
         <template v-else-if="record.kind === 'prompt'">
           <B24Button :label="record.options.confirmLabel" color="air-primary" :loading="promptLoading" @click="submitPrompt" />
-          <B24Button :label="record.options.cancelLabel" color="air-tertiary" @click="record.cancel()" />
+          <B24Button :label="record.options.cancelLabel" color="air-tertiary" @click="record.cancel('cancel')" />
         </template>
         <template v-else-if="record.kind === 'custom'">
           <B24Button

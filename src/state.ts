@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import type { ToastOptions } from './types'
+import type { FormCloseReason, ToastAction, ToastHandle, ToastOptions } from './types'
 
 export type DialogKind = 'alert' | 'confirm' | 'prompt' | 'error' | 'form' | 'custom'
 
@@ -9,7 +9,8 @@ export interface DialogRecord {
   options: Record<string, any>
   technical?: string
   finish(result?: unknown): void
-  cancel(): void
+  cancel(reason?: FormCloseReason): void
+  beforeCancel?: (reason: FormCloseReason) => boolean | void | Promise<boolean | void>
 }
 
 export interface LoaderRecord {
@@ -19,7 +20,14 @@ export interface LoaderRecord {
 
 export interface ToastRecord extends Required<Pick<ToastOptions, 'message' | 'type' | 'timeout' | 'closable'>> {
   id: string
+  dedupeKey?: string
   title?: string
+  action?: ToastAction
+  actionLoading: boolean
+  progressKey: number
+  handle: ToastHandle
+  update(options: Partial<ToastOptions>): void
+  runAction(event: MouseEvent): void
   close(): void
   pause(): void
   resume(): void

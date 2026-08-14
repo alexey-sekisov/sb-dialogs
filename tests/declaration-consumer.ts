@@ -17,10 +17,25 @@ async function consumeGlobalApi(): Promise<void> {
     columns: 2,
     fields: [
       { type: 'section', title: 'Параметры' },
-      { name: 'title', type: 'text', columnSpan: 2 },
+      { name: 'title', type: 'text', columnSpan: 2, autofocus: true, description: 'Введите название' },
+      {
+        name: 'status',
+        type: 'select',
+        optionsDeps: ['title'],
+        options: async () => [{ value: 'new', label: 'Новый' }],
+        visibleWhen: (values) => Boolean(values.title),
+      },
     ],
-    actions: [],
+    actions: [{ id: 'save', label: 'Сохранить', submit: true }],
+    beforeClose: ({ dirty }) => !dirty,
   })
+
+  const toast = Sb.dialogs().toast({
+    message: 'Сохранено',
+    dedupe: 'save-result',
+    action: { label: 'Отменить', handler: ({ toast }) => toast.close() },
+  })
+  toast.update({ message: 'Обновлено' })
 
   console.log(accepted, response.id)
 

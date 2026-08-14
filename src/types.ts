@@ -89,12 +89,24 @@ export interface ToastOptions {
   type?: ToastType
   timeout?: number
   closable?: boolean
+  /** Одинаковые активные toast объединяются. Строка задаёт явный ключ. По умолчанию true. */
+  dedupe?: boolean | string
+  /** Максимальное число одновременно видимых toast. По умолчанию 5. */
+  maxVisible?: number
+  action?: ToastAction
 }
 
 export interface ToastHandle {
   readonly id: string
   readonly closed: Promise<void>
+  update(options: Partial<ToastOptions>): void
   close(): void
+}
+
+export interface ToastAction {
+  label: string
+  /** Возврат false оставляет toast открытым. */
+  handler?: (context: { toast: ToastHandle; event: MouseEvent }) => unknown | Promise<unknown>
 }
 
 export type DialogSize = 'sm' | 'md' | 'lg'
@@ -156,6 +168,12 @@ interface FormFieldBase {
   defaultValue?: unknown
   required?: boolean
   disabled?: boolean
+  readonly?: boolean
+  autofocus?: boolean
+  /** Постоянный поясняющий текст под полем. */
+  description?: string
+  visibleWhen?: (values: Readonly<Record<string, unknown>>) => boolean
+  disabledWhen?: (values: Readonly<Record<string, unknown>>) => boolean
   min?: number
   max?: number
   pattern?: RegExp | string
@@ -174,9 +192,15 @@ export interface FormInputField extends FormFieldBase {
 export interface FormChoiceField extends FormFieldBase {
   name: string
   type: 'select' | 'multiselect' | 'radio'
-  options: Array<FormOption | FormOptionValue>
+  options: Array<FormOption | FormOptionValue> | FormOptionsProvider
+  /** Поля, после изменения которых нужно повторно загрузить options. */
+  optionsDeps?: string[]
   placeholder?: string
 }
+
+export type FormOptionsProvider = (
+  values: Readonly<Record<string, unknown>>,
+) => Array<FormOption | FormOptionValue> | Promise<Array<FormOption | FormOptionValue>>
 
 export interface FormCheckboxField extends FormFieldBase {
   name: string
@@ -223,7 +247,7 @@ export interface DialogController {
 export interface FormActionContext {
   values: Readonly<Record<string, unknown>>
   dialog: DialogController
-  event: MouseEvent
+  event: Event
 }
 
 export interface FormAction {
@@ -232,7 +256,17 @@ export interface FormAction {
   variant?: AirButtonVariant
   validate?: boolean
   cancel?: boolean
+  /** Использовать action при Enter. Иначе выбирается первый action без cancel. */
+  submit?: boolean
   handler?: (context: FormActionContext) => unknown | Promise<unknown>
+}
+
+export type FormCloseReason = 'dismiss' | 'cancel'
+
+export interface FormBeforeCloseContext {
+  reason: FormCloseReason
+  values: Readonly<Record<string, unknown>>
+  dirty: boolean
 }
 
 export interface FormDialogOptions extends BaseDialogOptions {
@@ -241,6 +275,10 @@ export interface FormDialogOptions extends BaseDialogOptions {
   initialValues?: Record<string, unknown>
   /** Desktop-сетка формы. По умолчанию одна колонка. */
   columns?: 1 | 2
+  /** Отправлять форму по Enter и Cmd/Ctrl+Enter в textarea. По умолчанию true. */
+  submitOnEnter?: boolean
+  /** Может запретить закрытие формы крестиком, overlay, Escape или cancel-action. */
+  beforeClose?: (context: FormBeforeCloseContext) => boolean | void | Promise<boolean | void>
 }
 
 export interface CustomDialogContext extends DialogController {
