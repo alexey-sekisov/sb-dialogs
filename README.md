@@ -1,13 +1,27 @@
 # Sb Air UI
 
 [![CI/CD](https://github.com/alexey-sekisov/sb-dialogs/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/alexey-sekisov/sb-dialogs/actions/workflows/ci-cd.yml)
-[Demo](https://alexey-sekisov.github.io/sb-dialogs/) · [Скачать актуальный UMD](https://alexey-sekisov.github.io/sb-dialogs/dist/sb.umd.js)
 
-Самодостаточная браузерная библиотека диалогов, HTTP-запросов, loader-состояний и утилит в стиле Bitrix24 Air. Production-поставка состоит из одного файла `dist/sb.umd.js`: Vue, B24UI и scoped-стили уже находятся внутри.
+[Demo](https://alexey-sekisov.github.io/sb-dialogs/) · [Последний Release](https://github.com/alexey-sekisov/sb-dialogs/releases/latest) · [Скачать актуальный UMD](https://github.com/alexey-sekisov/sb-dialogs/releases/latest/download/sb.umd.js)
 
-Библиотека не использует глобальный `BX` и не содержит адаптеров `BX.rest`, `BX.ajax` или `BX.SidePanel`.
+Самодостаточная браузерная библиотека диалогов, HTTP-запросов, loader-состояний и утилит в стиле Bitrix24 Air.
 
-## Подключение
+Потребителю нужен только один файл `sb.umd.js`. Vue, используемые Air-компоненты B24UI и изолированные стили уже находятся внутри: npm-пакеты, отдельный CSS и сетевые runtime-зависимости не требуются.
+
+> Библиотека предназначена для современных desktop-браузеров в коробочном Bitrix24.
+
+## Возможности
+
+| Раздел | Возможности |
+| --- | --- |
+| Диалоги | `alert`, `confirm`, `prompt`, `error`, `form`, `custom`, стек модальных окон |
+| Уведомления | Air-status toast, timeout, pause при наведении, ручное закрытие |
+| HTTP | GET/POST/PUT/DELETE, JSON, FormData, timeout, AbortSignal, группы отмены, download |
+| Ошибки | Единый `SbError`, безопасные технические сведения, редактирование секретов |
+| Loader | Общий блокирующий слой с независимыми параллельными операциями |
+| Утилиты | Clipboard API с fallback, сохранение Blob/Response, отложенная перезагрузка |
+
+## Быстрый старт
 
 ```html
 <script src="/assets/sb.umd.js"></script>
@@ -19,9 +33,7 @@
 </script>
 ```
 
-Повторное подключение файла не создаёт второй UI-root: библиотека оставит первый singleton и запишет предупреждение в консоль.
-
-## API
+Глобальный `window.Sb` является singleton:
 
 ```js
 Sb.version
@@ -31,34 +43,66 @@ Sb.loader()
 Sb.utils()
 ```
 
-Сервисы — singleton-экземпляры. Все диалоги принимают объект настроек; позиционных сигнатур и совместимости со старым `SBDialogs` нет.
+Повторное подключение UMD не создаёт второй Vue root: сохраняется первый экземпляр `window.Sb`, а в консоль выводится предупреждение. UI и стили создаются лениво при первом вызове диалога, toast или loader.
 
-### Диалоги
+### TypeScript
+
+Каждый GitHub Release содержит автономный `sb.d.ts`, сгенерированный из фактического публичного API. Положите его в проект и подключите через `tsconfig.json` или reference directive:
+
+```ts
+/// <reference path="./types/sb.d.ts" />
+
+const accepted: boolean = await Sb.dialogs().confirm({
+  title: 'Подтверждение',
+  message: 'Продолжить?',
+})
+```
+
+Декларация описывает глобальные `Sb` и `window.Sb`, а также экспортирует типы `SbError`, options, handles и generic-результаты HTTP. На runtime и размер UMD она не влияет.
+
+## Диалоги
+
+| Метод | Результат Promise | Результат отмены |
+| --- | --- | --- |
+| `alert(options)` | `void` | `void` |
+| `confirm(options)` | `boolean` | `false` |
+| `prompt(options)` | `string \| null` | `null` |
+| `error(options)` | `void` | `void` |
+| `form(options)` | результат action-handler | `null` |
+| `custom(options)` | пользовательское значение | `null` |
 
 ```js
-await Sb.dialogs().alert({ title: 'Сообщение', message: 'Изменения сохранены' })
+await Sb.dialogs().alert({
+  title: 'Сохранено',
+  message: 'Изменения успешно сохранены',
+})
 
 const accepted = await Sb.dialogs().confirm({
   title: 'Подтверждение',
   message: 'Удалить запись?',
   danger: true,
   confirmLabel: 'Удалить',
-  closable: false,
+  cancelLabel: 'Отмена',
 })
 
-const value = await Sb.dialogs().prompt({
-  title: 'Название',
-  label: 'Название задачи',
+const title = await Sb.dialogs().prompt({
+  title: 'Новая задача',
+  label: 'Название',
+  placeholder: 'Что нужно сделать?',
   required: true,
-  validate: async (value) => value.length < 3 ? 'Минимум три символа' : undefined,
+  validate: async (value) => value.trim().length < 3
+    ? 'Минимум три символа'
+    : undefined,
 })
 ```
 
-`confirm()` возвращает `false` при отмене. `prompt()`, `form()` и `custom()` возвращают `null`. Отмена пользователем не является исключением.
+Все окна по умолчанию имеют `closable: true`: показывают крестик и закрываются по Escape или клику на overlay. При `closable: false` все три способа блокируются; закрыть окно можно только кнопкой или через dialog controller.
 
-У всех модальных окон есть настройка `closable`, включённая по умолчанию. При `closable: false` крестик скрывается, а закрытие кликом снаружи и клавишей Escape блокируется. Закрыть такое окно можно кнопкой или программно через dialog controller.
+Модальные окна образуют стек. Клавиатурный фокус остаётся в активном верхнем окне и восстанавливается на исходном элементе после закрытия.
 
-Toast:
+### Toast
+
+`toast()` сразу возвращает handle, а не Promise:
 
 ```js
 const toast = Sb.dialogs().toast({
@@ -66,13 +110,16 @@ const toast = Sb.dialogs().toast({
   title: 'Готово',
   message: 'Сделка сохранена',
   timeout: 5000,  // 0 отключает автозакрытие
+  closable: true,
 })
 
 toast.close()
 await toast.closed
 ```
 
-Error-окно экранирует пользовательские строки, раскрывает технический JSON по ссылке «Подробнее» и позволяет скопировать его иконкой внутри блока:
+Toast располагаются стеком справа сверху. При наведении отсчёт timeout приостанавливается.
+
+### Error
 
 ```js
 await Sb.dialogs().error({
@@ -82,17 +129,26 @@ await Sb.dialogs().error({
 })
 ```
 
-Поля `token`, `authorization`, `password`, `secret`, `cookie`, `sessid`, `csrf`, `apiKey` и аналогичные автоматически скрываются в технических данных.
+Пользователь видит безопасное сообщение. По ссылке «Подробнее» раскрывается технический JSON, который можно скопировать иконкой в правом верхнем углу блока.
 
-### Форма по схеме
+Из технических данных автоматически удаляются значения полей `authorization`, `cookie`, `token`, `auth`, `password`, `secret`, `sessid`, `csrf`, `apiKey` и похожих ключей. Циклические ссылки обрабатываются, массивы и объекты ограничиваются, длинный текст обрезается.
+
+## Форма по схеме
 
 ```js
 const result = await Sb.dialogs().form({
-  title: 'Параметры',
-  rootClassName: 'to-do',
+  title: 'Параметры задачи',
+  rootClassName: 'task-form',
   initialValues: { priority: 'normal' },
   fields: [
-    { name: 'title', type: 'text', label: 'Название', hint: 'Короткое название задачи', required: true, min: 3 },
+    {
+      name: 'title',
+      type: 'text',
+      label: 'Название',
+      hint: 'Короткое и понятное название задачи',
+      required: true,
+      min: 3,
+    },
     {
       name: 'priority',
       type: 'select',
@@ -109,14 +165,14 @@ const result = await Sb.dialogs().form({
     { name: 'notify', type: 'checkbox', label: 'Уведомить', defaultValue: true },
     { name: 'mode', type: 'radio', label: 'Режим', options: ['auto', 'manual'] },
     { type: 'divider' },
-    { type: 'content', content: 'Статический текст безопасно выводится как текст.' },
+    { type: 'content', content: 'Статический безопасный текст' },
   ],
   actions: [
     {
       id: 'save',
       label: 'Сохранить',
       variant: 'air-primary',
-      handler: async ({ values }) => {
+      handler: async ({ values, dialog, event }) => {
         await save(values)
         return values
       },
@@ -126,30 +182,53 @@ const result = await Sb.dialogs().form({
 })
 ```
 
-Поддерживаются `text`, `textarea`, `number`, `select`, `multiselect`, `checkbox`, `radio`, `content`, `divider`. Валидация: `required`, `min`, `max`, `pattern` и sync/async `validate`. Возврат `false` из action-handler оставляет форму открытой; другое успешное значение закрывает окно и становится результатом Promise.
+Поддерживаемые поля:
 
-Опциональный `hint` добавляет к label поля Air-иконку подсказки. Текст показывается официальным B24UI Tooltip при наведении мыши или фокусе с клавиатуры. `hint` работает и у checkbox-полей.
+| Тип | Значение | Особенности |
+| --- | --- | --- |
+| `text`, `textarea` | `string` | placeholder, ограничения длины, pattern |
+| `number` | `number` | min/max |
+| `select` | примитив | options из примитивов или объектов |
+| `multiselect` | массив | множественный выбор |
+| `checkbox` | `boolean` | hint рядом с label |
+| `radio` | примитив | список вариантов |
+| `content` | — | строка, DOM Node или callback |
+| `divider` | — | визуальный разделитель |
 
-### Своя DOM-верстка
+Правила формы:
+
+- `hint` выводится официальным B24UI Tooltip при наведении или фокусе с клавиатуры.
+- Доступны `required`, `min`, `max`, `pattern` и sync/async `validate`.
+- Action запускает валидацию, если не передано `validate: false`.
+- Во время async handler активная кнопка показывает loader, остальные блокируются.
+- Возврат `false` оставляет форму открытой.
+- Любой другой успешный результат закрывает форму и становится результатом Promise.
+- Ошибка handler открывает error-окно, а форма остаётся в стеке.
+
+## Своя DOM-разметка
 
 ```js
-const result = await Sb.dialogs().custom({
+const selected = await Sb.dialogs().custom({
   title: 'Карточка',
   content: ({ resolve }) => {
     const root = document.createElement('div')
     const button = document.createElement('button')
+
     button.textContent = 'Выбрать'
     button.addEventListener('click', () => resolve({ id: 42 }))
     root.append(button)
+
     return root
   },
   actions: [{ id: 'cancel', label: 'Отмена', cancel: true }],
 })
 ```
 
-Callback обязан вернуть `HTMLElement` или `DocumentFragment`. HTML-строки и `innerHTML` намеренно не поддерживаются. Переданный DOM находится в light DOM под `#sb-ui-root`, поэтому его можно стилизовать со страницы.
+`content` обязан вернуть `HTMLElement` или `DocumentFragment`. HTML-строки и `innerHTML` намеренно не поддерживаются. Пользовательский DOM находится под `#sb-ui-root`, поэтому его можно стилизовать со страницы через переданный `rootClassName`.
 
-### HTTP
+## HTTP
+
+### Общая конфигурация
 
 ```js
 Sb.http().configure({
@@ -159,33 +238,59 @@ Sb.http().configure({
   headers: () => ({ 'X-CSRF-Token': getToken() }),
   detectError: (payload) => {
     if (payload && payload.success === false) {
-      return { message: payload.message || 'Операция отклонена', code: payload.code }
+      return {
+        message: payload.message || 'Операция отклонена',
+        code: payload.code,
+        details: payload,
+      }
     }
     return false
   },
 })
+```
 
-const data = await Sb.http().get('tasks', {
+`configure()` объединяет новые значения с текущей конфигурацией и возвращает HTTP-service.
+
+### Запросы
+
+```js
+const tasks = await Sb.http().get('tasks', {
   query: { status: ['new', 'active'] },
   group: 'task-list',
   loader: 'Загружаем задачи…',
 })
 
-await Sb.http().post('tasks', { title: 'Новая задача' }, {
-  loader: false,
-  notifyError: false,
+await Sb.http().post('tasks', { title: 'Новая задача' })
+await Sb.http().put('tasks/42', { title: 'Обновлённая задача' })
+await Sb.http().delete('tasks/42', { notifyError: false })
+
+await Sb.http().request({
+  url: 'tasks/42',
+  method: 'PATCH',
+  body: { archived: true },
+  responseType: 'json',
 })
 ```
 
-Методы: `request`, `get`, `post`, `put`, `delete`, `download`, `cancelGroup`, `cancelAll`.
+Настройки отдельного запроса:
 
-- Plain object сериализуется в JSON.
-- `FormData`, `Blob`, строки и `URLSearchParams` передаются как есть.
-- `responseType`: `auto`, `json`, `text`, `blob`, `arrayBuffer`, `response`.
-- Автоматические loader и error-окно включены по умолчанию.
-- Поддерживаются `AbortSignal`, `timeout` и группы отмены.
-- Отмена выбрасывает `SbError` с `code: 'ABORTED'`, но не показывает error-окно.
-- Timeout использует `code: 'TIMEOUT'`.
+| Поле | Назначение |
+| --- | --- |
+| `query` | Объект или `URLSearchParams`; массив превращается в повторяющиеся параметры |
+| `headers` | Дополняют и переопределяют глобальные headers |
+| `credentials` | Переопределяют глобальный режим Fetch credentials |
+| `responseType` | `auto`, `json`, `text`, `blob`, `arrayBuffer`, `response` |
+| `timeout` | Таймаут в миллисекундах; `0` отключает его |
+| `signal` | Внешний `AbortSignal` |
+| `group` | Имя группы для массовой отмены |
+| `loader` | `false`, строка сообщения или `{ message }` |
+| `notifyError` | `false` отключает автоматическое error-окно |
+
+Plain object автоматически сериализуется в JSON и получает `Content-Type: application/json`. `FormData`, `Blob`, строки и `URLSearchParams` передаются без преобразования. Ответ в режиме `auto` разбирается как JSON при JSON Content-Type, иначе как text.
+
+Loader и error-окно включены по умолчанию. Error-окно не поглощает ошибку: исходный Promise всё равно отклоняется экземпляром `SbError`.
+
+### Отмена
 
 ```js
 const controller = new AbortController()
@@ -196,55 +301,80 @@ Sb.http().cancelGroup('task-list')
 Sb.http().cancelAll()
 ```
 
-Скачивание:
+Отмена возвращает `SbError` с кодом `ABORTED` и не открывает error-окно. Таймаут использует код `TIMEOUT`.
+
+### Скачивание
 
 ```js
 await Sb.http().download('/reports/42', { filename: 'report.xlsx' })
 await Sb.utils().download(blob, 'data.csv')
-await Sb.utils().download(response) // имя читается из Content-Disposition
+await Sb.utils().download(response)
 ```
 
-Поддерживаются `filename=` и RFC 5987 `filename*=UTF-8''...`.
+Имя определяется из явно переданного `filename`, затем из `Content-Disposition`, включая UTF-8 `filename*`, и в последнюю очередь из URL.
 
-### Loader и утилиты
+## Loader и утилиты
 
 ```js
 const loading = Sb.loader().show({ message: 'Сохраняем…' })
 loading.update({ message: 'Почти готово…' })
 loading.close()
-loading.close() // безопасно повторять
+loading.close() // идемпотентно
 
-await Sb.utils().copy('Текст')
+await Sb.utils().copy('Текст', {
+  successMessage: 'Ссылка скопирована',
+})
 
 const reload = Sb.utils().reload({ delay: 3000 })
 reload.cancel()
 ```
 
-Параллельные loader-записи независимы и отображаются в одном блокирующем Air-слое. `reload()` не обращается к `BX.SidePanel` и перезагружает обычную страницу.
+Параллельные loader-записи независимы и отображаются в одном блокирующем слое. `copy()` использует Clipboard API с fallback и по умолчанию показывает toast. `reload()` перезагружает обычную страницу и не обращается к `BX.SidePanel`.
+
+## Обработка ошибок
+
+Все транспортные ошибки нормализуются в `SbError`:
+
+```js
+try {
+  await Sb.http().get('/tasks/42')
+} catch (error) {
+  if (error instanceof Error && error.name === 'SbError') {
+    console.log(error.message)
+  }
+}
+```
+
+В TypeScript технические поля можно типизировать без runtime-импорта:
+
+```ts
+import type { SbError } from './types/sb'
+
+const normalized = error as SbError
+console.log(normalized.code, normalized.details, normalized.isAbort)
+```
+
+Основные коды: `HTTP_ERROR`, `NETWORK_ERROR`, `TIMEOUT`, `ABORTED`, `PARSE_ERROR`, `BUSINESS_ERROR`, `HANDLER_ERROR`, `CONFIG_ERROR`, `UNKNOWN_ERROR`.
+
+## Изоляция страницы
+
+- UI монтируется в единственный `#sb-ui-root`.
+- Modal и всплывающие элементы teleport-ятся внутрь этого root.
+- Встроенный CSS префиксуется `#sb-ui-root` во время сборки.
+- Глобальный Tailwind reset не применяется к странице.
+- Стили вставляются один раз и только при первом UI-вызове.
 
 ## Разработка
+
+Требования: Bun `1.3.13` и современный Node.js для build tooling.
 
 ```bash
 bun install
 bun run dev              # playground
 bun run typecheck
 bun run test
-bun run build            # dist/sb.umd.js + raw/gzip size
+bun run build            # UMD + raw/gzip breakdown
 bun run build:playground
-bun run build:pages      # UMD + готовый каталог playground-dist для Pages
-bun run check
+bun run build:pages      # UMD + готовый playground-dist
+bun run check            # typecheck + tests + UMD build
 ```
-
-Стили B24UI/Tailwind на этапе сборки префиксуются `#sb-ui-root`, reset не выходит за пределы контейнера. UI-root и Vue-приложение монтируются лениво при первом вызове UI.
-
-## CI/CD и GitHub Pages
-
-Workflow `.github/workflows/ci-cd.yml` запускается для pull request и каждого push в `main`. Он устанавливает зависимости строго по `bun.lock`, выполняет typecheck и тесты, собирает UMD и сохраняет `sb.umd.js` как GitHub Actions artifact на 14 дней.
-
-После успешной проверки ветки `main` тот же workflow публикует playground в GitHub Pages. В Pages-артефакт также копируется собранный UMD, поэтому demo и ссылка скачивания всегда относятся к одному commit. Каталоги `dist/` и `playground-dist/` в Git не добавляются — production-файлы выпускает только CI/CD.
-
-Workflow автоматически пытается включить GitHub Pages и выбрать публикацию через Actions. Если это запрещено настройками организации или репозитория, нужно один раз выбрать **Settings → Pages → Build and deployment → Source → GitHub Actions**. После успешного push в `main` будут доступны:
-
-- demo: `https://alexey-sekisov.github.io/sb-dialogs/`;
-- UMD: `https://alexey-sekisov.github.io/sb-dialogs/dist/sb.umd.js`;
-- временный UMD-артефакт конкретного commit — на странице соответствующего Actions run.

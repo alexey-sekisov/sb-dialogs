@@ -3,14 +3,17 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const source = resolve(root, 'dist/sb.umd.js')
 const pagesRoot = resolve(root, 'playground-dist')
-const target = resolve(pagesRoot, 'dist/sb.umd.js')
+const pagesDist = resolve(pagesRoot, 'dist')
+const artifacts = ['sb.umd.js', 'sb.d.ts', 'sb.umd.js.sha256']
 
-await stat(source)
 await stat(resolve(pagesRoot, 'index.html'))
-await mkdir(dirname(target), { recursive: true })
-await copyFile(source, target)
+await mkdir(pagesDist, { recursive: true })
+for (const artifact of artifacts) {
+  const source = resolve(root, 'dist', artifact)
+  await stat(source)
+  await copyFile(source, resolve(pagesDist, artifact))
+}
 await writeFile(resolve(pagesRoot, '.nojekyll'), '')
 
 console.log('GitHub Pages artifact prepared in playground-dist/')

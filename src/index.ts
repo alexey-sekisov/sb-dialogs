@@ -4,6 +4,7 @@ import { DialogService } from './services/dialogs'
 import { HttpService } from './services/http'
 import { LoaderService } from './services/loader'
 import { UtilsService } from './services/utils'
+import { VERSION } from './version'
 
 export * from './types'
 export { SbError }
@@ -17,12 +18,13 @@ export interface SbApi {
 }
 
 declare global {
+  const Sb: SbApi
+
   interface Window {
     Sb: SbApi
   }
 }
 
-const VERSION = '1.0.0'
 const marker = Symbol.for('first-bit.sb.instance')
 const scope = globalThis as typeof globalThis & { Sb?: SbApi; [marker]?: boolean }
 

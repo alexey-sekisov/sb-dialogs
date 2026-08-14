@@ -3,6 +3,7 @@ name: CI/CD
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -38,8 +39,15 @@ jobs:
       - name: Test
         run: bun run test
 
+      - name: Verify release tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: bun run release:verify
+
       - name: Build UMD
         run: bun run build
+
+      - name: Prepare release assets
+        run: bun run release:prepare
 
       - name: Build playground
         run: bun run build:playground
@@ -47,8 +55,11 @@ jobs:
       - name: Upload UMD artifact
         uses: actions/upload-artifact@v7
         with:
-          name: sb-umd-${{ github.sha }}
-          path: dist/sb.umd.js
+          name: sb-${{ github.sha }}
+          path: |
+            dist/sb.umd.js
+            dist/sb.d.ts
+            dist/sb.umd.js.sha256
           if-no-files-found: error
           retention-days: 14
 
@@ -84,3 +95,30 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v8
+        with:
+          name: sb-${{ github.sha }}
+          path: dist
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "${GITHUB_REF_NAME}"
+          dist/sb.umd.js
+          dist/sb.d.ts
+          dist/sb.umd.js.sha256
+          --verify-tag
+          --generate-notes
+          --title "Sb ${GITHUB_REF_NAME}"

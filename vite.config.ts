@@ -1,9 +1,43 @@
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import tailwindcss from '@tailwindcss/vite'
 import bitrix24UI from '@bitrix24/b24ui-nuxt/vite'
+import dts from 'unplugin-dts/vite'
 import postcss from 'postcss'
 import prefixSelector from 'postcss-prefix-selector'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+const packageJson = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
+
+const usedB24Themes = [
+  'button',
+  'checkbox',
+  'input',
+  'modal',
+  'radio-group',
+  'select',
+  'separator',
+  'textarea',
+  'tooltip',
+]
+
+function limitB24ThemeSources(): Plugin {
+  return {
+    name: 'sb-limit-b24-theme-sources',
+    config(config) {
+      // B24UI generates this cache file in an earlier config hook on every run.
+      const themeFile = resolve(config.root || '.', 'node_modules/.b24ui-nuxt/b24ui.css')
+      const code = readFileSync(themeFile, 'utf8')
+      if (!code.includes('@source "./b24ui";')) {
+        throw new Error('Не удалось ограничить набор B24UI-тем: изменился формат b24ui.css')
+      }
+      writeFileSync(themeFile, code.replace(
+        '@source "./b24ui";',
+        usedB24Themes.map((theme) => `@source "./b24ui/${theme}.ts";`).join('\n'),
+      ))
+    },
+  }
+}
 
 function injectCssIntoUmd(): Plugin {
   return {
@@ -43,11 +77,30 @@ function injectCssIntoUmd(): Plugin {
 
 export default defineConfig(({ mode }) => ({
   base: mode === 'playground' ? './' : undefined,
+  define: {
+    __SB_VERSION__: JSON.stringify(packageJson.version),
+  },
   plugins: [
     vue(),
-    bitrix24UI(),
-    tailwindcss(),
-    ...(mode === 'playground' ? [] : [injectCssIntoUmd()]),
+    bitrix24UI({
+      autoImport: false,
+      colorMode: false,
+      components: false,
+      dts: false,
+      prose: false,
+      router: false,
+    }),
+    limitB24ThemeSources(),
+    ...(mode === 'playground' ? [] : [
+      dts({
+        bundleTypes: true,
+        include: ['src/**/*.ts', 'src/**/*.vue'],
+        outDirs: 'dist',
+        processor: 'vue',
+        tsconfigPath: './tsconfig.json',
+      }),
+      injectCssIntoUmd(),
+    ]),
   ],
   build: mode === 'playground'
     ? { outDir: 'playground-dist' }

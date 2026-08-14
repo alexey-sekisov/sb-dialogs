@@ -1,5 +1,4 @@
 import { createApp, type App } from 'vue'
-import { createMemoryHistory, createRouter } from 'vue-router'
 import SbHost from './SbHost.vue'
 
 let app: App<Element> | null = null
@@ -22,10 +21,6 @@ export function ensureUi(): HTMLElement {
 
   if (!app) {
     app = createApp(SbHost)
-    app.use(createRouter({
-      history: createMemoryHistory(),
-      routes: [{ path: '/:pathMatch(.*)*', component: { render: () => null } }],
-    }))
     app.mount(root)
   }
   return root

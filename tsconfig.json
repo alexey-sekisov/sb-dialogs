@@ -12,5 +12,6 @@
     "types": ["vitest/globals"],
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "tests/**/*.ts", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "tests/**/*.ts", "vite.config.ts"],
+  "exclude": ["tests/declaration-consumer.ts"]
 }

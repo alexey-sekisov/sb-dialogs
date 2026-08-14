@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import B24App from '@bitrix24/b24ui-nuxt/components/App.vue'
+import { provide, ref, useId } from 'vue'
+import { ConfigProvider, TooltipProvider } from 'reka-ui'
 import B24Button from '@bitrix24/b24ui-nuxt/components/Button.vue'
 import ru from '@bitrix24/b24ui-nuxt/runtime/locale/ru.js'
+import { localeContextInjectionKey } from '@bitrix24/b24ui-nuxt/runtime/composables/useLocale.js'
+import { portalTargetInjectionKey } from '@bitrix24/b24ui-nuxt/runtime/composables/usePortal.js'
 import { uiState } from '../state'
 import DialogItem from './DialogItem.vue'
+
+provide(localeContextInjectionKey, ref(ru))
+provide(portalTargetInjectionKey, ref('#sb-ui-root'))
 </script>
 
 <template>
-  <B24App :locale="ru" portal="#sb-ui-root" :toaster="null">
+  <ConfigProvider :use-id="() => useId()" :dir="ru.dir" :locale="ru.code">
+    <TooltipProvider>
     <DialogItem
       v-for="(record, index) in uiState.dialogs"
       :key="record.id"
@@ -49,5 +56,6 @@ import DialogItem from './DialogItem.vue'
         </div>
       </div>
     </div>
-  </B24App>
+    </TooltipProvider>
+  </ConfigProvider>
 </template>
