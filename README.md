@@ -36,7 +36,6 @@
 Глобальный `window.Sb` является singleton:
 
 ```js
-Sb.version
 Sb.http()
 Sb.dialogs()
 Sb.loader()
@@ -366,7 +365,7 @@ console.log(normalized.code, normalized.details, normalized.isAbort)
 
 ## Разработка
 
-Требования: Bun `1.3.13` и современный Node.js для build tooling.
+Требования: Bun `1.3.13`; для semantic-release — Node.js `^22.14.0` или `>=24.10.0`. В CI используется Node.js `24.11.1`.
 
 ```bash
 bun install
@@ -377,4 +376,24 @@ bun run build            # UMD + raw/gzip breakdown
 bun run build:playground
 bun run build:pages      # UMD + готовый playground-dist
 bun run check            # typecheck + tests + UMD build
+bun run release:dry-run  # расчёт следующей версии без публикации
 ```
+
+## Релизы
+
+Релизы полностью автоматизированы через semantic-release. После успешного push в `main` workflow анализирует Conventional Commits, при необходимости создаёт тег `vX.Y.Z`, формирует release notes и публикует GitHub Release.
+
+| Commit | Результат |
+| --- | --- |
+| `fix: ...`, `perf: ...` | Patch-релиз |
+| `feat: ...` | Minor-релиз |
+| `feat!: ...` или footer `BREAKING CHANGE:` | Major-релиз |
+| `docs: ...`, `test: ...`, `ci: ...`, `chore: ...` | Новый релиз не создаётся |
+
+Версия определяется историей Git и тегами; вручную менять `version` в `package.json`, создавать тег или запускать `gh release create` не нужно. В каждый Release загружаются:
+
+- `sb.umd.js`
+- `sb.d.ts`
+- `sb.umd.js.sha256`
+
+GitHub Pages продолжает обновляться после каждого успешного push в `main`, независимо от того, потребовался ли новый Release.

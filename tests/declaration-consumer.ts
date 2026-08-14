@@ -8,11 +8,10 @@ const confirmOptions: ConfirmOptions = {
 }
 
 async function consumeGlobalApi(): Promise<void> {
-  const version: string = Sb.version
   const accepted: boolean = await window.Sb.dialogs().confirm(confirmOptions)
   const response = await Sb.http().get<{ id: number }>('/api/item')
 
-  console.log(version, accepted, response.id)
+  console.log(accepted, response.id)
 
   try {
     await Sb.http().get('/api/error')

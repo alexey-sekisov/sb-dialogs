@@ -8,7 +8,7 @@
     <script src="/dist/sb.umd.js"></script>
     <script>
       document.getElementById('status').textContent = window.Sb
-        ? `Sb ${window.Sb.version} загружен`
+        ? 'Sb загружен'
         : 'Sb не загружен'
       document.getElementById('open').addEventListener('click', () => {
         window.Sb.dialogs().alert({ title: 'UMD работает', message: 'Внешних runtime-зависимостей нет.' })

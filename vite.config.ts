@@ -7,8 +7,6 @@ import prefixSelector from 'postcss-prefix-selector'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const packageJson = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
-
 const usedB24Themes = [
   'button',
   'checkbox',
@@ -77,9 +75,6 @@ function injectCssIntoUmd(): Plugin {
 
 export default defineConfig(({ mode }) => ({
   base: mode === 'playground' ? './' : undefined,
-  define: {
-    __SB_VERSION__: JSON.stringify(packageJson.version),
-  },
   plugins: [
     vue(),
     bitrix24UI({
