@@ -105,6 +105,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v6
+
       - name: Download release assets
         uses: actions/download-artifact@v8
         with:
