@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const usedB24Themes = [
+  'alert',
   'button',
   'checkbox',
   'input',

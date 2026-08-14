@@ -5,11 +5,22 @@ import type { ConfirmOptions, SbError } from '../dist/sb'
 const confirmOptions: ConfirmOptions = {
   title: 'Проверка типов',
   message: 'Продолжить?',
+  size: 'sm',
 }
 
 async function consumeGlobalApi(): Promise<void> {
   const accepted: boolean = await window.Sb.dialogs().confirm(confirmOptions)
   const response = await Sb.http().get<{ id: number }>('/api/item')
+
+  void Sb.dialogs().form({
+    title: 'Типизированная форма',
+    columns: 2,
+    fields: [
+      { type: 'section', title: 'Параметры' },
+      { name: 'title', type: 'text', columnSpan: 2 },
+    ],
+    actions: [],
+  })
 
   console.log(accepted, response.id)
 

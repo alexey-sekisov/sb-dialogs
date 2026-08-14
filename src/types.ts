@@ -97,9 +97,13 @@ export interface ToastHandle {
   close(): void
 }
 
+export type DialogSize = 'sm' | 'md' | 'lg'
+
 export interface BaseDialogOptions {
   title?: string
   message?: string
+  /** Ширина окна. Если не указана, выбирается автоматически по типу диалога. */
+  size?: DialogSize
   /** Показывать крестик и разрешать закрытие снаружи/Escape. По умолчанию true. */
   closable?: boolean
   rootClassName?: string
@@ -157,6 +161,8 @@ interface FormFieldBase {
   pattern?: RegExp | string
   validate?: FormValidator
   rootClassName?: string
+  /** Количество колонок, занимаемых полем в двухколоночной форме. */
+  columnSpan?: 1 | 2
 }
 
 export interface FormInputField extends FormFieldBase {
@@ -186,12 +192,19 @@ export interface FormDividerField extends Omit<FormFieldBase, 'name'> {
   type: 'divider'
 }
 
+export interface FormSectionField extends Omit<FormFieldBase, 'name' | 'label'> {
+  type: 'section'
+  title: string
+  description?: string
+}
+
 export type FormField =
   | FormInputField
   | FormChoiceField
   | FormCheckboxField
   | FormContentField
   | FormDividerField
+  | FormSectionField
 
 export type AirButtonVariant =
   | 'air-primary'
@@ -226,6 +239,8 @@ export interface FormDialogOptions extends BaseDialogOptions {
   fields: FormField[]
   actions: FormAction[]
   initialValues?: Record<string, unknown>
+  /** Desktop-сетка формы. По умолчанию одна колонка. */
+  columns?: 1 | 2
 }
 
 export interface CustomDialogContext extends DialogController {

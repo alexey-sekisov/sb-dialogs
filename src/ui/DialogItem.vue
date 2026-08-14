@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import B24Alert from '@bitrix24/b24ui-nuxt/components/Alert.vue'
 import B24Button from '@bitrix24/b24ui-nuxt/components/Button.vue'
 import B24Input from '@bitrix24/b24ui-nuxt/components/Input.vue'
 import B24Modal from '@bitrix24/b24ui-nuxt/components/Modal.vue'
 import B24Textarea from '@bitrix24/b24ui-nuxt/components/Textarea.vue'
+import AlertAccentIcon from '@bitrix24/b24icons-vue/outline/AlertAccentIcon'
+import CircleCheckIcon from '@bitrix24/b24icons-vue/outline/CircleCheckIcon'
 import CopyIcon from '@bitrix24/b24icons-vue/outline/CopyIcon'
 import { copyTextToClipboard } from '../clipboard'
 import { toSbError } from '../errors'
@@ -20,6 +23,15 @@ const detailsOpen = ref(false)
 const copied = ref(false)
 const customNode = ref<Node | null>(null)
 const customLoading = ref<string | null>(null)
+
+const dialogSize = computed(() => props.record.options.size || ({
+  alert: 'sm',
+  confirm: 'sm',
+  prompt: 'md',
+  error: 'md',
+  form: 'lg',
+  custom: 'lg',
+} as const)[props.record.kind])
 
 onMounted(() => {
   if (props.record.kind === 'prompt') promptValue.value = (props.record.options as PromptOptions).defaultValue || ''
@@ -96,11 +108,12 @@ async function runCustomAction(action: any, event: MouseEvent): Promise<void> {
     :close="record.options.closable !== false"
     :dismissible="record.options.closable !== false && active"
     :modal="active"
+    :class="['sb-modal', `sb-modal--${dialogSize}`]"
     portal="#sb-ui-root"
     @update:open="updateOpen"
   >
     <template #body>
-      <div class="sb-modal-body" :class="record.options.rootClassName">
+      <div class="sb-modal-body" :class="[record.options.rootClassName, `sb-modal-body--${record.kind}`]">
         <template v-if="record.kind === 'prompt'">
           <label v-if="record.options.label" class="sb-field__label" for="sb-prompt-input">{{ record.options.label }}</label>
           <B24Textarea
@@ -126,7 +139,13 @@ async function runCustomAction(action: any, event: MouseEvent): Promise<void> {
         </template>
 
         <template v-else-if="record.kind === 'error'">
-          <div>{{ record.options.message }}</div>
+          <B24Alert
+            class="sb-error-summary"
+            color="air-secondary-alert"
+            size="md"
+            :icon="AlertAccentIcon"
+            :description="record.options.message"
+          />
           <template v-if="record.technical">
             <button
               type="button"
@@ -134,22 +153,27 @@ async function runCustomAction(action: any, event: MouseEvent): Promise<void> {
               :aria-expanded="detailsOpen"
               @click="toggleDetails"
             >{{ detailsOpen ? 'Скрыть подробности' : 'Подробнее' }}</button>
-            <div v-if="detailsOpen" class="sb-error-details-wrap">
-              <button
-                type="button"
-                class="sb-error-details-copy"
-                :aria-label="copied ? 'Скопировано' : 'Скопировать техническую информацию'"
-                :title="copied ? 'Скопировано' : 'Скопировать'"
-                @click="copyDetails"
-              ><CopyIcon /></button>
-              <pre class="sb-error-details">{{ record.technical }}</pre>
-            </div>
+            <Transition name="sb-details">
+              <div v-if="detailsOpen" class="sb-error-details-wrap">
+                <div class="sb-error-details-header">
+                  <span>Техническая информация</span>
+                  <button
+                    type="button"
+                    class="sb-error-details-copy"
+                    :aria-label="copied ? 'Скопировано' : 'Скопировать техническую информацию'"
+                    :title="copied ? 'Скопировано' : 'Скопировать'"
+                    @click="copyDetails"
+                  ><Component :is="copied ? CircleCheckIcon : CopyIcon" /></button>
+                </div>
+                <pre class="sb-error-details">{{ record.technical }}</pre>
+              </div>
+            </Transition>
           </template>
         </template>
 
         <FormDialog v-else-if="record.kind === 'form'" :record="record" />
         <DomContent v-else-if="record.kind === 'custom' && customNode" :node="customNode" />
-        <div v-else-if="record.options.message">{{ record.options.message }}</div>
+        <div v-else-if="record.options.message" class="sb-dialog-message">{{ record.options.message }}</div>
       </div>
     </template>
 

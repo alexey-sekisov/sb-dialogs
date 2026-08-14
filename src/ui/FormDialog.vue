@@ -102,84 +102,104 @@ async function runAction(action: FormAction, event: MouseEvent): Promise<void> {
 }
 
 const hasActions = computed(() => options.actions.length > 0)
+
+function fieldSpan(field: FormField): 1 | 2 {
+  if (options.columns !== 2) return 1
+  if (field.columnSpan) return field.columnSpan
+  return ['textarea', 'radio', 'checkbox', 'content', 'divider', 'section'].includes(field.type) ? 2 : 1
+}
 </script>
 
 <template>
   <div class="sb-form" :class="options.rootClassName">
-    <template v-for="(field, index) in options.fields" :key="'name' in field ? field.name || index : index">
-      <B24Separator v-if="field.type === 'divider'" />
-
-      <div v-else-if="field.type === 'content'" class="sb-field" :class="field.rootClassName">
-        <DomContent
-          v-if="typeof field.content !== 'string'"
-          :node="typeof field.content === 'function' ? field.content() : field.content"
+    <div class="sb-form__fields" :class="`sb-form__fields--columns-${options.columns || 1}`">
+      <template v-for="(field, index) in options.fields" :key="'name' in field ? field.name || index : index">
+        <B24Separator
+          v-if="field.type === 'divider'"
+          class="sb-form-divider sb-field--span-2"
         />
-        <div v-else>{{ field.content }}</div>
-      </div>
 
-      <div v-else class="sb-field" :class="field.rootClassName">
-        <div v-if="field.label && field.type !== 'checkbox'" class="sb-field__label-line">
-          <label class="sb-field__label" :for="`sb-field-${field.name}`">
-            {{ field.label }} <span v-if="field.required" class="sb-field__required">*</span>
-          </label>
-          <FieldHint v-if="field.hint" :text="field.hint" />
+        <div v-else-if="field.type === 'section'" class="sb-form-section sb-field--span-2" :class="field.rootClassName">
+          <div class="sb-form-section__title">{{ field.title }}</div>
+          <div v-if="field.description" class="sb-form-section__description">{{ field.description }}</div>
         </div>
 
-        <B24Textarea
-          v-if="field.type === 'textarea'"
-          :id="`sb-field-${field.name}`"
-          v-model="values[field.name]"
-          :placeholder="field.placeholder"
-          :disabled="field.disabled"
-          :highlight="Boolean(errors[field.name])"
-        />
-        <B24Input
-          v-else-if="field.type === 'text' || field.type === 'number'"
-          :id="`sb-field-${field.name}`"
-          v-model="values[field.name]"
-          :type="field.type"
-          :placeholder="field.placeholder"
-          :disabled="field.disabled"
-          :highlight="Boolean(errors[field.name])"
-        />
-        <B24Select
-          v-else-if="field.type === 'select' || field.type === 'multiselect'"
-          :id="`sb-field-${field.name}`"
-          v-model="values[field.name]"
-          :items="normalizedOptions(field)"
-          :multiple="field.type === 'multiselect'"
-          :placeholder="field.placeholder || 'Выберите значение'"
-          :disabled="field.disabled"
-          :highlight="Boolean(errors[field.name])"
-          portal="#sb-ui-root"
-        />
-        <B24Checkbox
-          v-else-if="field.type === 'checkbox'"
-          v-model="values[field.name]"
-          :disabled="field.disabled"
-          :required="field.required"
-          :highlight="Boolean(errors[field.name])"
+        <div
+          v-else-if="field.type === 'content'"
+          class="sb-field"
+          :class="[field.rootClassName, `sb-field--span-${fieldSpan(field)}`]"
         >
-          <template v-if="field.label" #label>
-            <span class="sb-checkbox-label">
-              <span>{{ field.label }} <span v-if="field.required" class="sb-field__required">*</span></span>
-              <FieldHint v-if="field.hint" :text="field.hint" />
-            </span>
-          </template>
-        </B24Checkbox>
-        <B24RadioGroup
-          v-else-if="field.type === 'radio'"
-          v-model="values[field.name]"
-          :items="normalizedOptions(field)"
-          :disabled="field.disabled"
-          :required="field.required"
-          :highlight="Boolean(errors[field.name])"
-          variant="list"
-        />
+          <DomContent
+            v-if="typeof field.content !== 'string'"
+            :node="typeof field.content === 'function' ? field.content() : field.content"
+          />
+          <div v-else>{{ field.content }}</div>
+        </div>
 
-        <div v-if="errors[field.name]" class="sb-field__error" role="alert">{{ errors[field.name] }}</div>
-      </div>
-    </template>
+        <div v-else class="sb-field" :class="[field.rootClassName, `sb-field--span-${fieldSpan(field)}`]">
+          <div v-if="field.label && field.type !== 'checkbox'" class="sb-field__label-line">
+            <label class="sb-field__label" :for="`sb-field-${field.name}`">
+              {{ field.label }} <span v-if="field.required" class="sb-field__required">*</span>
+            </label>
+            <FieldHint v-if="field.hint" :text="field.hint" />
+          </div>
+
+          <B24Textarea
+            v-if="field.type === 'textarea'"
+            :id="`sb-field-${field.name}`"
+            v-model="values[field.name]"
+            :placeholder="field.placeholder"
+            :disabled="field.disabled"
+            :highlight="Boolean(errors[field.name])"
+          />
+          <B24Input
+            v-else-if="field.type === 'text' || field.type === 'number'"
+            :id="`sb-field-${field.name}`"
+            v-model="values[field.name]"
+            :type="field.type"
+            :placeholder="field.placeholder"
+            :disabled="field.disabled"
+            :highlight="Boolean(errors[field.name])"
+          />
+          <B24Select
+            v-else-if="field.type === 'select' || field.type === 'multiselect'"
+            :id="`sb-field-${field.name}`"
+            v-model="values[field.name]"
+            :items="normalizedOptions(field)"
+            :multiple="field.type === 'multiselect'"
+            :placeholder="field.placeholder || 'Выберите значение'"
+            :disabled="field.disabled"
+            :highlight="Boolean(errors[field.name])"
+            portal="#sb-ui-root"
+          />
+          <B24Checkbox
+            v-else-if="field.type === 'checkbox'"
+            v-model="values[field.name]"
+            :disabled="field.disabled"
+            :required="field.required"
+            :highlight="Boolean(errors[field.name])"
+          >
+            <template v-if="field.label" #label>
+              <span class="sb-checkbox-label">
+                <span>{{ field.label }} <span v-if="field.required" class="sb-field__required">*</span></span>
+                <FieldHint v-if="field.hint" :text="field.hint" />
+              </span>
+            </template>
+          </B24Checkbox>
+          <B24RadioGroup
+            v-else-if="field.type === 'radio'"
+            v-model="values[field.name]"
+            :items="normalizedOptions(field)"
+            :disabled="field.disabled"
+            :required="field.required"
+            :highlight="Boolean(errors[field.name])"
+            variant="list"
+          />
+
+          <div v-if="errors[field.name]" class="sb-field__error" role="alert">{{ errors[field.name] }}</div>
+        </div>
+      </template>
+    </div>
 
     <div v-if="formError" class="sb-form__error" role="alert">{{ formError }}</div>
 

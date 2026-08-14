@@ -46,6 +46,24 @@ describe('DialogService и LoaderService', () => {
     await expect(first).resolves.toBe(true)
   })
 
+  it('рендерит двухколоночную форму с визуальной секцией', async () => {
+    const dialogs = new DialogService()
+    const promise = dialogs.form({
+      title: 'Параметры',
+      columns: 2,
+      fields: [
+        { type: 'section', title: 'Основное', description: 'Описание секции' },
+        { name: 'title', type: 'text', columnSpan: 2 },
+      ],
+      actions: [],
+    })
+    await nextTick()
+    expect(document.querySelector('.sb-form__fields--columns-2')).not.toBeNull()
+    expect(document.querySelector('.sb-form-section')?.textContent).toContain('Основное')
+    uiState.dialogs[0]!.cancel()
+    await promise
+  })
+
   it('toast закрывается по таймеру и поддерживает ручное закрытие', async () => {
     vi.useFakeTimers()
     const dialogs = new DialogService()

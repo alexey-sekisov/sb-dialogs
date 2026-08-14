@@ -1,8 +1,6 @@
 # Sb Air UI
 
-[![CI/CD](https://github.com/alexey-sekisov/sb-dialogs/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/alexey-sekisov/sb-dialogs/actions/workflows/ci-cd.yml)
-
-[Demo](https://alexey-sekisov.github.io/sb-dialogs/) · [Последний Release](https://github.com/alexey-sekisov/sb-dialogs/releases/latest) · [Скачать актуальный UMD](https://github.com/alexey-sekisov/sb-dialogs/releases/latest/download/sb.umd.js)
+[Открыть демо](https://alexey-sekisov.github.io/sb-dialogs/)
 
 Самодостаточная браузерная библиотека диалогов, HTTP-запросов, loader-состояний и утилит в стиле Bitrix24 Air.
 
@@ -46,7 +44,7 @@ Sb.utils()
 
 ### TypeScript
 
-Каждый GitHub Release содержит автономный `sb.d.ts`, сгенерированный из фактического публичного API. Положите его в проект и подключите через `tsconfig.json` или reference directive:
+Для TypeScript доступна автономная декларация `sb.d.ts`, сгенерированная из фактического публичного API. Положите её рядом с библиотекой и подключите через `tsconfig.json` или reference directive:
 
 ```ts
 /// <reference path="./types/sb.d.ts" />
@@ -97,6 +95,8 @@ const title = await Sb.dialogs().prompt({
 
 Все окна по умолчанию имеют `closable: true`: показывают крестик и закрываются по Escape или клику на overlay. При `closable: false` все три способа блокируются; закрыть окно можно только кнопкой или через dialog controller.
 
+Ширина выбирается автоматически по типу окна. При необходимости её можно переопределить через `size: 'sm' | 'md' | 'lg'`.
+
 Модальные окна образуют стек. Клавиатурный фокус остаётся в активном верхнем окне и восстанавливается на исходном элементе после закрытия.
 
 ### Toast
@@ -137,9 +137,16 @@ await Sb.dialogs().error({
 ```js
 const result = await Sb.dialogs().form({
   title: 'Параметры задачи',
+  size: 'lg',
+  columns: 2,
   rootClassName: 'task-form',
   initialValues: { priority: 'normal' },
   fields: [
+    {
+      type: 'section',
+      title: 'Основные параметры',
+      description: 'Заполните данные новой задачи',
+    },
     {
       name: 'title',
       type: 'text',
@@ -193,10 +200,13 @@ const result = await Sb.dialogs().form({
 | `radio` | примитив | список вариантов |
 | `content` | — | строка, DOM Node или callback |
 | `divider` | — | визуальный разделитель |
+| `section` | — | заголовок и описание группы полей |
 
 Правила формы:
 
 - `hint` выводится официальным B24UI Tooltip при наведении или фокусе с клавиатуры.
+- `columns: 2` включает desktop-сетку; `columnSpan: 2` растягивает конкретное поле на всю ширину.
+- `textarea`, `radio`, `checkbox`, `content`, `divider` и `section` в двухколоночной форме по умолчанию занимают всю ширину.
 - Доступны `required`, `min`, `max`, `pattern` и sync/async `validate`.
 - Action запускает валидацию, если не передано `validate: false`.
 - Во время async handler активная кнопка показывает loader, остальные блокируются.
@@ -362,38 +372,3 @@ console.log(normalized.code, normalized.details, normalized.isAbort)
 - Встроенный CSS префиксуется `#sb-ui-root` во время сборки.
 - Глобальный Tailwind reset не применяется к странице.
 - Стили вставляются один раз и только при первом UI-вызове.
-
-## Разработка
-
-Требования: Bun `1.3.13`; для semantic-release — Node.js `^22.14.0` или `>=24.10.0`. В CI используется Node.js `24.11.1`.
-
-```bash
-bun install
-bun run dev              # playground
-bun run typecheck
-bun run test
-bun run build            # UMD + raw/gzip breakdown
-bun run build:playground
-bun run build:pages      # UMD + готовый playground-dist
-bun run check            # typecheck + tests + UMD build
-bun run release:dry-run  # расчёт следующей версии без публикации
-```
-
-## Релизы
-
-Релизы полностью автоматизированы через semantic-release. После успешного push в `main` workflow анализирует Conventional Commits, при необходимости создаёт тег `vX.Y.Z`, формирует release notes и публикует GitHub Release.
-
-| Commit | Результат |
-| --- | --- |
-| `fix: ...`, `perf: ...` | Patch-релиз |
-| `feat: ...` | Minor-релиз |
-| `feat!: ...` или footer `BREAKING CHANGE:` | Major-релиз |
-| `docs: ...`, `test: ...`, `ci: ...`, `chore: ...` | Новый релиз не создаётся |
-
-Версия определяется историей Git и тегами; вручную менять `version` в `package.json`, создавать тег или запускать `gh release create` не нужно. В каждый Release загружаются:
-
-- `sb.umd.js`
-- `sb.d.ts`
-- `sb.umd.js.sha256`
-
-GitHub Pages продолжает обновляться после каждого успешного push в `main`, независимо от того, потребовался ли новый Release.
